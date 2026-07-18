@@ -23,8 +23,8 @@
     Setelah lihat nota, Anda bisa <strong>membatalkan penjualan</strong>.
     Unit kembali ke stok. Disarankan batalkan <em>sebelum</em> TTD digital disimpan.
   </p>
-  <form method="post" action="/item/{{ item.id }}/batal-jual"
-        onsubmit="return confirm('Batalkan penjualan ini?\n\n{{ item.name }}\n\nUnit kembali ke stok.');">
+  <form method="post" action="/item/{{ item.id }}/batal-jual" id="form-batal-jual"
+        onsubmit="var b=this.querySelector('button'); if(b){b.disabled=true;b.textContent='Memproses...';} return confirm('Batalkan penjualan ini?\n\n{{ item.name }}\n\nUnit kembali ke stok.');">
     <button type="submit" class="btn btn-danger btn-block">Batalkan penjualan → kembalikan ke stok</button>
   </form>
 </div>
@@ -35,7 +35,7 @@
     (arsip nota akan ditandai void).
   </p>
   <form method="post" action="/item/{{ item.id }}/batal-jual" style="margin-top:0.65rem"
-        onsubmit="return confirm('Batalkan penjualan + void nota?');">
+        onsubmit="var b=this.querySelector('button'); if(b){b.disabled=true;b.textContent='Memproses...';} return confirm('Batalkan penjualan + void nota?');">
     <button type="submit" class="btn btn-danger btn-sm">Batalkan penjualan</button>
   </form>
 </div>

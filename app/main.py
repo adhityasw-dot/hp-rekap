@@ -138,6 +138,9 @@ def require_user(request: Request, db: Session) -> User | RedirectResponse:
 
 def seed_if_needed():
     """Pastikan 1 user admin = ADMIN_USERNAME / ADMIN_PASSWORD dari Railway."""
+    # Import model agar metadata lengkap (termasuk SaleNota)
+    from . import models as _models  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
     ensure_schema()
     db = SessionLocal()
@@ -1277,13 +1280,21 @@ def _void_sale(db: Session, item: Item) -> str:
     for qc in jual_qcs:
         db.delete(qc)
 
-    # Arsip nota: tandai void (jangan dihapus, biar riwayat tetap ada)
-    for n in (
-        db.query(SaleNota)
-        .filter(SaleNota.item_id == item.id, SaleNota.voided == False)  # noqa: E712
-        .all()
-    ):
-        n.voided = True
+    # Arsip nota: tandai void (aman jika tabel belum ada / error)
+    try:
+        for n in (
+            db.query(SaleNota)
+            .filter(SaleNota.item_id == item.id)
+            .all()
+        ):
+            n.voided = True
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        # pastikan item masih ter-attach; caller akan commit void stok
+        db.add(item)
 
     item.qty_remaining = item.qty_total
     item.sell_price = None
@@ -1307,13 +1318,52 @@ def item_batal_jual(
     if not item:
         return flash_redirect("/stok", err="Item tidak ditemukan.")
 
-    err = _void_sale(db, item)
-    if err:
-        return flash_redirect(f"/item/{item.id}", err=err)
-    db.commit()
+    name = item.name
+    try:
+        # pastikan tabel sale_notas ada
+        try:
+            ensure_schema()
+        except Exception:
+            pass
+        err = _void_sale(db, item)
+        if err:
+            db.rollback()
+            return flash_redirect(f"/item/{item_id}", err=err)
+        db.commit()
+    except Exception as e:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        # Fallback minimal: kembalikan stok saja
+        try:
+            item = db.query(Item).filter(Item.id == item_id).first()
+            if item:
+                item.qty_remaining = item.qty_total
+                item.sell_price = None
+                item.sell_date = None
+                item.buyer = ""
+                item.buyer_phone = ""
+                svc.refresh_item_status(item)
+                db.commit()
+                return flash_redirect(
+                    f"/item/{item_id}",
+                    ok=f"Stok dikembalikan ({name}). Sebagian data jual mungkin perlu dicek manual.",
+                )
+        except Exception:
+            try:
+                db.rollback()
+            except Exception:
+                pass
+        return flash_redirect(
+            f"/item/{item_id}",
+            err=f"Gagal batalkan jual. Coba lagi. ({type(e).__name__})",
+        )
+
+    # Redirect ke detail unit (status ready) — bukan /jual, lebih stabil di HP
     return flash_redirect(
-        f"/jual?item_id={item.id}",
-        ok=f"Penjualan dibatalkan. {item.name} kembali ke stok — silakan revisi & jual ulang.",
+        f"/item/{item_id}",
+        ok=f"Penjualan dibatalkan. {name} kembali ke stok.",
     )
 
 

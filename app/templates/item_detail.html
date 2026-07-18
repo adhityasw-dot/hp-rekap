@@ -10,7 +10,7 @@
     {% endif %}
     {% if item.qty_remaining < item.qty_total or item.sell_price is not none %}
     <form method="post" action="/item/{{ item.id }}/batal-jual" style="display:inline;margin:0"
-          onsubmit="return confirm('Batalkan penjualan?\n\n{{ item.name }}\n\nUnit kembali ke stok.');">
+          onsubmit="var b=this.querySelector('button'); if(!confirm('Batalkan penjualan?\n\n{{ item.name }}\n\nUnit kembali ke stok.')) return false; if(b){b.disabled=true;b.textContent='...';} return true;">
       <button type="submit" class="btn btn-sm btn-danger">Batalkan jual</button>
     </form>
     {% endif %}
