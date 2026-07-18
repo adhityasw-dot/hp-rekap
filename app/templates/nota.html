@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Nota {{ nota_no }} — Leks Phone{% endblock %}
+{% block content %}
+<div class="nota-actions no-print">
+  <button type="button" class="btn" onclick="window.print()">Cetak / PDF</button>
+  <a class="btn btn-secondary" href="/nota">Arsip nota</a>
+  <a class="btn btn-secondary" href="/item/{{ item.id }}">Ke detail unit</a>
+  <a class="btn btn-secondary" href="/jual">Jual unit lain</a>
+  <a class="btn btn-secondary" href="/stok">Stok</a>
+</div>
+
+{% if signed %}
+<div class="alert alert-ok no-print">
+  Nota ditandatangani digital{% if nota.signed_at %} · {{ nota.signed_at.strftime('%d/%m/%Y %H:%M') }} UTC{% endif %}.
+  Tersimpan di arsip pembeli.
+</div>
+{% endif %}
+
+{% if can_void and not signed %}
+<div class="card no-print" style="max-width:720px;margin:0 auto 1rem;background:var(--surface2)">
+  <h3 style="margin:0 0 0.5rem;font-size:0.95rem">Revisi penjualan?</h3>
+  <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem">
+    Setelah lihat nota, Anda bisa <strong>membatalkan penjualan</strong>.
+    Unit kembali ke stok. Disarankan batalkan <em>sebelum</em> TTD digital disimpan.
+  </p>
+  <form method="post" action="/item/{{ item.id }}/batal-jual"
+        onsubmit="return confirm('Batalkan penjualan ini?\n\n{{ item.name }}\n\nUnit kembali ke stok.');">
+    <button type="submit" class="btn btn-danger btn-block">Batalkan penjualan → kembalikan ke stok</button>
+  </form>
+</div>
+{% elif can_void and signed %}
+<div class="card no-print" style="max-width:720px;margin:0 auto 1rem;background:var(--surface2)">
+  <p class="muted" style="margin:0;font-size:0.85rem">
+    Nota sudah ditandatangani. Batalkan jual hanya jika benar-benar perlu
+    (arsip nota akan ditandai void).
+  </p>
+  <form method="post" action="/item/{{ item.id }}/batal-jual" style="margin-top:0.65rem"
+        onsubmit="return confirm('Batalkan penjualan + void nota?');">
+    <button type="submit" class="btn btn-danger btn-sm">Batalkan penjualan</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="nota-sheet nota-garansi">
+  <div class="ng-header">
+    <img src="/static/logo.png" alt="Leks Phone" class="ng-logo" />
+  </div>
+
+  <div class="ng-contact">
+    <div class="ng-addr">{{ shop.address }}</div>
+    <div class="ng-social">
+      <span class="ng-soc"><strong>WA {{ shop.wa }}</strong></span>
+      <span class="ng-soc"><strong>IG {{ shop.ig }}</strong></span>
+      <span class="ng-soc"><strong>TikTok {{ shop.tiktok }}</strong></span>
+    </div>
+  </div>
+
+  <h1 class="ng-title">Nota dan Kartu Garansi</h1>
+  <p class="ng-no">No. {{ nota_no }}</p>
+
+  <div class="ng-block">
+    <p class="ng-lead">
+      Dengan membeli hape dari <strong>Leks Phone</strong>, Anda dianggap sudah membaca
+      dan/atau menyetujui syarat-syarat berikut ini:
+    </p>
+    <ul class="ng-list">
+      <li>Hape bergaransi <strong>1 minggu</strong> (tidak termasuk aksesoris seperti charger, headset).</li>
+      <li>Hape yang sudah dibeli tidak dapat dikembalikan atau ditukar dengan barang lain
+        (kecuali ada kerusakan fungsi dalam masa garansi 1 minggu).</li>
+      <li>Refund uang atas barang yang sudah pernah dipakai akan dikenakan potongan <strong>15%–20%</strong>
+        (dengan prosedur garansi yang ada, melihat kondisi &amp; tipe barang).</li>
+    </ul>
+  </div>
+
+  <div class="ng-block">
+    <div class="ng-section-head">KETENTUAN GARANSI</div>
+    <ul class="ng-list">
+      <li>Lama garansi <strong>1 minggu</strong>.</li>
+      <li>Garansi hanya meliputi kerusakan <strong>fungsi</strong>, bukan kondisi fisik.</li>
+      <li>Nota ini wajib ada sewaktu claim garansi.</li>
+      <li>Garansi tidak meliputi kehilangan data software.</li>
+      <li>LCD dan fisik (spot, pecah, goresan) tidak termasuk garansi; mohon dicek saat pembelian.</li>
+    </ul>
+  </div>
+
+  <div class="ng-block">
+    <div class="ng-section-head">GARANSI BATAL APABILA</div>
+    <ul class="ng-list">
+      <li>Tidak bisa menunjukkan nota / tidak ada nota / nota hilang.</li>
+      <li>Segel rusak / segel cacat / ada coretan user / segel tidak ada.</li>
+      <li>Kesalahan pemakaian atau pemasangan user / bencana alam
+        (salah tegangan, jatuh, terbakar, hangus, terkena cairan, dll.).</li>
+      <li>Barang telah diperbaiki pihak ketiga atau barang telah dimodifikasi, software (upgrade).</li>
+      <li>Posisi iOS yang tidak sama (banyak bug software saat proses update yang berpengaruh pada kondisi hardware).</li>
+    </ul>
+  </div>
+
+  <div class="ng-fields">
+    <div class="ng-field">
+      <span class="ng-flab">Tanggal</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{{ sell_date_label }}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">Nama</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{{ item.buyer or '—' }}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">No. HP</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{{ buyer_phone or '—' }}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">Tipe</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{{ item.name }}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">Imei</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{% if item.imei %}{{ item.imei }}{% if item.imei2 %} / {{ item.imei2 }}{% endif %}{% else %}—{% endif %}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">Serial</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval">{{ item.serial_number or '—' }}</span>
+    </div>
+    <div class="ng-field">
+      <span class="ng-flab">Harga</span>
+      <span class="ng-fsep">:</span>
+      <span class="ng-fval ng-price">{{ (item.sell_price or 0)|idr }}{% if item.battery_health %} · BH {{ item.battery_health }}%{% endif %}</span>
+    </div>
+  </div>
+
+  <p class="ng-slogan">“{{ shop.slogan }}”</p>
+
+  <div class="ng-signs">
+    <div class="ng-sign">
+      <div class="ng-sign-label">Penjual</div>
+      <div class="ng-sign-box">
+        <img src="/static/ttd-penjual.png" alt="Tanda tangan penjual" class="ng-ttd" />
+      </div>
+      <div class="ng-sign-name">( {{ shop.seller_name }} )</div>
+    </div>
+    <div class="ng-sign">
+      <div class="ng-sign-label">Pembeli</div>
+      <div class="ng-sign-box {% if not signed %}ng-sign-blank{% endif %}">
+        {% if signed and signature_url %}
+        <img src="{{ signature_url }}" alt="TTD pembeli" class="ng-ttd ng-ttd-buyer" />
+        {% endif %}
+      </div>
+      <div class="ng-sign-name">( {{ item.buyer or '………………' }} )</div>
+    </div>
+  </div>
+</div>
+
+{% if not signed %}
+<div class="card no-print nota-sign-panel" style="max-width:720px;margin:1rem auto">
+  <h2 style="margin:0 0 0.5rem">Tanda tangan digital pembeli</h2>
+  <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem">
+    Minta pembeli tanda tangan di kotak bawah (jari/stylus). Disimpan di website (arsip nota),
+    <strong>tidak dikirim ke HP konsumen</strong>.
+  </p>
+  <div class="sig-wrap">
+    <canvas id="sig-canvas" width="640" height="220" aria-label="Area tanda tangan"></canvas>
+  </div>
+  <div class="actions" style="margin-top:0.5rem">
+    <button type="button" class="btn btn-sm btn-secondary" id="sig-clear">Hapus coretan</button>
+  </div>
+  <form method="post" action="/item/{{ item.id }}/nota/sign" id="form-sign" class="form" style="margin-top:0.75rem">
+    <input type="hidden" name="signature_data" id="signature_data" />
+    <label style="display:flex;align-items:flex-start;gap:0.5rem;color:var(--text)">
+      <input type="checkbox" name="agreed_terms" value="1" required style="width:auto;margin-top:0.25rem" />
+      <span>Pembeli telah membaca &amp; menyetujui syarat garansi pada nota ini.</span>
+    </label>
+    <button class="btn btn-block" type="submit" id="btn-save-sign">Simpan TTD &amp; arsipkan nota</button>
+  </form>
+</div>
+<script>
+(function () {
+  var canvas = document.getElementById("sig-canvas");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var drawing = false;
+  var hasInk = false;
+
+  function resizeCanvas() {
+    var wrap = canvas.parentElement;
+    var w = Math.min(640, wrap.clientWidth || 320);
+    var ratio = window.devicePixelRatio || 1;
+    canvas.style.width = w + "px";
+    canvas.style.height = "200px";
+    canvas.width = Math.floor(w * ratio);
+    canvas.height = Math.floor(200 * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, 200);
+    ctx.strokeStyle = "#111111";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    hasInk = false;
+  }
+  resizeCanvas();
+  window.addEventListener("resize", function () {
+    // jangan clear saat resize kalau sudah ada ink — biarkan
+  });
+
+  function pos(e) {
+    var r = canvas.getBoundingClientRect();
+    var t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  }
+  function start(e) {
+    e.preventDefault();
+    drawing = true;
+    var p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+  function move(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    var p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    hasInk = true;
+  }
+  function end(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    drawing = false;
+  }
+  canvas.addEventListener("mousedown", start);
+  canvas.addEventListener("mousemove", move);
+  canvas.addEventListener("mouseup", end);
+  canvas.addEventListener("mouseleave", end);
+  canvas.addEventListener("touchstart", start, { passive: false });
+  canvas.addEventListener("touchmove", move, { passive: false });
+  canvas.addEventListener("touchend", end);
+
+  document.getElementById("sig-clear").addEventListener("click", function () {
+    resizeCanvas();
+  });
+
+  document.getElementById("form-sign").addEventListener("submit", function (e) {
+    if (!hasInk) {
+      e.preventDefault();
+      alert("Minta pembeli tanda tangan dulu di kotak putih.");
+      return;
+    }
+    document.getElementById("signature_data").value = canvas.toDataURL("image/png");
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

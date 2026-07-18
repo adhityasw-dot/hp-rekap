@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Login — Leks Phone{% endblock %}
+{% block content %}
+<div class="login-wrap" style="padding:0;min-height:auto;background:transparent">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="/static/logo.png" alt="Leks Phone" class="login-logo" />
+    </div>
+    <p class="sub">Melayani Sepenuh Hati · Stok, jual, kas &amp; laba</p>
+    {% if flash_err %}
+    <div class="alert alert-err">{{ flash_err }}</div>
+    {% endif %}
+    <form method="post" action="/login" class="form">
+      <div>
+        <label for="username">Username</label>
+        <input id="username" name="username" required autocomplete="username" autofocus placeholder="Username" />
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Password" />
+      </div>
+      <button class="btn btn-block" type="submit">Masuk</button>
+    </form>
+    <p class="muted" style="margin-top:1.1rem;text-align:center;font-size:0.8rem">
+      Login dengan akun admin yang sudah diset di server.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+data/
+__pycache__/
+*.pyc
+.env
+.git/
+*.db
+.secret_key
+scripts/
+terminals/
+.grok/

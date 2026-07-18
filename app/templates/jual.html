@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% block title %}Jual Barang — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Jual Barang</h1>
+</div>
+
+<div class="card">
+  {% if not ready_items %}
+  <p class="empty">Tidak ada stok ready. Catat pembelian dulu.</p>
+  {% else %}
+  <form method="post" action="/jual" class="form" id="form-jual" enctype="multipart/form-data">
+    <div>
+      <label for="item_id">Pilih stok (HP / Macbook / Watch / dll.) *</label>
+      <select id="item_id" name="item_id" required>
+        <option value="" data-buy="0">— pilih —</option>
+        {% for it in ready_items %}
+        {% set qm = qc_meta.get(it.id) %}
+        <option value="{{ it.id }}" data-buy="{{ it.buy_price }}"
+          {% if preselect_id and preselect_id == it.id %}selected{% endif %}>
+          {{ it.name }} · modal {{ it.buy_price|idr }}{% if it.kind=='bulk' %} · sisa {{ it.qty_remaining }}{% endif %}{% if it.imei %} · {{ it.imei }}{% endif %}{% if qm and qm.badge == 'bad' %} · ⚠ QC bermasalah{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% if preselect_id %}
+      <p class="muted" style="font-size:0.85rem;margin:0.35rem 0 0">
+        Unit sudah dipilih otomatis setelah pembatalan jual — isi ulang harga / data lalu simpan.
+      </p>
+      {% endif %}
+    </div>
+
+    <div id="unit-preview" class="card" style="display:none;margin:0.5rem 0;background:var(--surface2);box-shadow:none">
+      <h3 style="margin:0 0 0.5rem;font-size:0.95rem">Ringkasan unit</h3>
+      <div class="list-item" style="padding:0.25rem 0"><span class="muted">Nama</span><span id="pv-name">—</span></div>
+      <div class="list-item" style="padding:0.25rem 0"><span class="muted">IMEI</span><span id="pv-imei">—</span></div>
+      <div class="list-item" style="padding:0.25rem 0"><span class="muted">Serial</span><span id="pv-serial">—</span></div>
+      <div class="list-item" style="padding:0.25rem 0"><span class="muted">QC beli</span><span id="pv-qc">—</span></div>
+    </div>
+
+    <div id="soft-warn-box" class="soft-warn" style="display:none" role="status"></div>
+
+    <div class="form-row two">
+      <div>
+        <label for="sell_date">Tanggal jual *</label>
+        <input id="sell_date" name="sell_date" type="date" value="{{ today }}" required />
+      </div>
+      <div>
+        <label for="sell_price">Harga jual *</label>
+        <input id="sell_price" name="sell_price" class="js-money" inputmode="numeric" placeholder="7,500,000" required />
+      </div>
+    </div>
+    <div>
+      <label for="qty">Qty jual (untuk bulk / aksesoris)</label>
+      <input id="qty" name="qty" type="number" min="1" value="1" />
+    </div>
+
+    <div class="form-row two">
+      <div>
+        <label for="buyer">Nama pembeli *</label>
+        <input id="buyer" name="buyer" placeholder="Nama pembeli (wajib diisi)" autocomplete="name" required />
+      </div>
+      <div>
+        <label for="buyer_phone">No. WhatsApp / HP pembeli</label>
+        <input id="buyer_phone" name="buyer_phone" inputmode="tel" placeholder="08xxxxxxxxxx" autocomplete="tel" />
+      </div>
+    </div>
+    <div>
+      <label for="notes">Metode penjualan</label>
+      <input id="notes" name="notes" list="metode-presets" placeholder="COD / Shopee / Tokopedia / Transfer / Online" />
+      <datalist id="metode-presets">
+        <option value="COD"></option>
+        <option value="Shopee"></option>
+        <option value="Tokopedia"></option>
+        <option value="TikTok"></option>
+        <option value="Transfer"></option>
+        <option value="Online"></option>
+      </datalist>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0" />
+
+    <!-- QC Jual (opsional / soft skip) -->
+    <details id="qc-jual-details" open>
+      <summary style="cursor:pointer;color:var(--accent);font-weight:600;margin-bottom:0.5rem">
+        Quality Check saat jual (opsional)
+      </summary>
+      <p class="muted" style="font-size:0.85rem;margin:0 0 0.75rem">
+        Boleh dilewati. Jika QC beli ada yang <strong>bermasalah</strong>, sistem hanya memberi peringatan (tidak memblokir).
+      </p>
+
+      <label style="display:flex;align-items:center;gap:0.5rem;color:var(--text)">
+        <input type="checkbox" name="cannot_check" id="cannot_check" value="1" style="width:auto" />
+        Unit tidak dicek ulang saat jual (skip checklist)
+      </label>
+      <div>
+        <label>Alasan skip (opsional)</label>
+        <input name="cannot_check_reason" id="cannot_check_reason" placeholder="Sudah dicek saat beli / pembeli buru-buru" />
+      </div>
+
+      <div id="qc-fields">
+        {% for group, rows in qc_groups.items() %}
+        <h3 style="margin:1rem 0 0.5rem;font-size:0.95rem;color:var(--accent)">{{ group }}</h3>
+        {% for row in rows %}
+          {% if row.type == 'percent' %}
+          <div class="list-item qc-row" style="align-items:center">
+            <span>{{ row.label }}</span>
+            <input class="qc-input" name="qc_{{ row.key }}" inputmode="numeric" placeholder="0-100" min="0" max="100" style="width:90px" />
+          </div>
+          {% else %}
+          <div class="qc-bool-block" style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">
+            <div class="list-item" style="flex-wrap:wrap;gap:0.5rem;border:none">
+              <span style="flex:1;min-width:140px">{{ row.label }}</span>
+              <label style="display:inline-flex;gap:0.25rem;align-items:center;color:var(--text);font-size:0.85rem">
+                <input type="radio" class="qc-input qc-radio" name="qc_{{ row.key }}" value="ok" data-key="{{ row.key }}" style="width:auto" /> OK
+              </label>
+              <label style="display:inline-flex;gap:0.25rem;align-items:center;color:var(--text);font-size:0.85rem">
+                <input type="radio" class="qc-input qc-radio" name="qc_{{ row.key }}" value="bad" data-key="{{ row.key }}" style="width:auto" /> Bermasalah
+              </label>
+            </div>
+            <div class="qc-note-wrap" id="note-wrap-{{ row.key }}" style="display:none;margin:0.25rem 0 0 0.5rem">
+              <label style="font-size:0.8rem">Jelaskan masalahnya</label>
+              <input name="qc_{{ row.key }}_note" placeholder="Contoh: body lecet kiri..." />
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+
+      <div>
+        <label>Catatan QC jual</label>
+        <textarea name="qc_notes" placeholder="Ringkasan (opsional)"></textarea>
+      </div>
+      <div class="card" style="box-shadow:none;background:var(--surface2);margin-top:0.5rem">
+        <h3 style="margin:0 0 0.5rem;font-size:0.95rem">Foto bukti (opsional)</h3>
+        <div id="photo-rows">
+          <div class="form-row two photo-row">
+            <div>
+              <label>Keterangan</label>
+              <input name="qc_photo_label" placeholder="Body lecet" />
+            </div>
+            <div>
+              <label>Foto</label>
+              <input type="file" name="qc_photo" accept="image/*" />
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" id="btn-add-photo" style="margin-top:0.5rem">+ Foto</button>
+      </div>
+    </details>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:0.75rem 0" />
+
+    <h2 style="margin:0">Biaya lain-lain (potong laba unit ini)</h2>
+    <p class="muted" style="margin:0">
+      Langsung mengurangi <strong>laba penjualan barang yang dipilih</strong>
+      (charger, tembak IMEI, es teh, makan, packing, ongkir, dll.).
+    </p>
+
+    <div>
+      <label for="charger_price">Charger (opsional)</label>
+      <input id="charger_price" name="charger_price" class="js-cost js-money" inputmode="numeric" placeholder="82,000" />
+    </div>
+
+    <div id="cost-rows" style="display:flex;flex-direction:column;gap:0.65rem">
+      <div class="form-row two cost-row">
+        <div>
+          <label>Jenis biaya</label>
+          <input name="cost_label" list="cost-presets" placeholder="Es teh / makan / IMEI" />
+        </div>
+        <div>
+          <label>Jumlah (Rp)</label>
+          <input name="cost_amount" class="js-cost js-money" inputmode="numeric" placeholder="15,000" />
+        </div>
+      </div>
+      <div class="form-row two cost-row">
+        <div>
+          <label>Jenis biaya</label>
+          <input name="cost_label" list="cost-presets" placeholder="Opsional" />
+        </div>
+        <div>
+          <label>Jumlah (Rp)</label>
+          <input name="cost_amount" class="js-cost js-money" inputmode="numeric" placeholder="" />
+        </div>
+      </div>
+    </div>
+    <datalist id="cost-presets">
+      <option value="Charger Ugreen"></option>
+      <option value="Tembak IMEI"></option>
+      <option value="Es teh"></option>
+      <option value="Makan"></option>
+      <option value="Packing"></option>
+      <option value="Ongkir"></option>
+      <option value="Temper / softcase"></option>
+      <option value="Kabel"></option>
+      <option value="Service"></option>
+    </datalist>
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-add-cost" style="align-self:flex-start">
+      + Tambah baris biaya
+    </button>
+
+    <label style="display:flex;align-items:center;gap:0.5rem;color:var(--text);margin-top:0.35rem">
+      <input type="checkbox" name="costs_affect_cash" value="1" style="width:auto" />
+      Sekaligus kurangi kas (jika biaya dibayar cash/transfer terpisah)
+    </label>
+    <p class="muted" style="margin:0;font-size:0.8rem">
+      Centang di atas opsional. <strong>Laba unit selalu berkurang</strong> meski kas tidak dikurangi.
+    </p>
+
+    <div class="card" style="margin-top:0.5rem;background:var(--surface2);box-shadow:none" id="profit-preview">
+      <h3 style="margin:0 0 0.5rem">Perkiraan laba unit ini</h3>
+      <div class="list-item" style="padding:0.35rem 0"><span class="muted">Harga jual</span><span id="pv-sell">—</span></div>
+      <div class="list-item" style="padding:0.35rem 0"><span class="muted">− Modal barang</span><span id="pv-buy">—</span></div>
+      <div class="list-item" style="padding:0.35rem 0"><span class="muted">− Biaya lain-lain</span><span id="pv-cost" class="red">—</span></div>
+      <div class="list-item" style="padding:0.5rem 0 0;border-top:1px solid var(--border);margin-top:0.25rem">
+        <span><strong>Laba</strong></span>
+        <span id="pv-profit" class="money green" style="font-size:1.15rem;font-weight:700">—</span>
+      </div>
+    </div>
+
+    <button class="btn btn-block" type="submit" id="btn-simpan-jual">Simpan penjualan + buka nota</button>
+  </form>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var itemsMeta = {{ items_json|tojson }};
+  var byId = {};
+  (itemsMeta || []).forEach(function (x) { byId[x.id] = x; });
+
+  function parseRp(v) {
+    if (v == null || v === "") return 0;
+    var s = String(v).replace(/Rp/gi, "").replace(/\s/g, "");
+    if (s.indexOf(",") >= 0 && s.indexOf(".") >= 0) {
+      if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
+      else s = s.replace(/,/g, "");
+    } else if (s.indexOf(",") >= 0) {
+      var p = s.split(",");
+      if (p.length > 1 && p.slice(1).every(function (x) { return x.length === 3; })) s = s.replace(/,/g, "");
+      else s = s.replace(",", ".");
+    } else if ((s.match(/\./g) || []).length > 1) {
+      s = s.replace(/\./g, "");
+    } else if (s.indexOf(".") >= 0) {
+      var q = s.split(".");
+      if (q.length > 1 && q.slice(1).every(function (x) { return x.length === 3; })) s = s.replace(/\./g, "");
+    }
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function fmt(n) {
+    var neg = n < 0;
+    n = Math.round(Math.abs(n));
+    var t = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return (neg ? "-Rp" : "Rp") + t;
+  }
+
+  var sel = document.getElementById("item_id");
+  var sell = document.getElementById("sell_price");
+  var charger = document.getElementById("charger_price");
+  var box = document.getElementById("cost-rows");
+  var warnBox = document.getElementById("soft-warn-box");
+  var unitPrev = document.getElementById("unit-preview");
+
+  function currentMeta() {
+    if (!sel || !sel.value) return null;
+    return byId[parseInt(sel.value, 10)] || null;
+  }
+
+  function updateUnitPreview() {
+    var m = currentMeta();
+    if (!m) {
+      if (unitPrev) unitPrev.style.display = "none";
+      if (warnBox) { warnBox.style.display = "none"; warnBox.innerHTML = ""; }
+      return;
+    }
+    if (unitPrev) {
+      unitPrev.style.display = "block";
+      var elN = document.getElementById("pv-name");
+      var elI = document.getElementById("pv-imei");
+      var elS = document.getElementById("pv-serial");
+      var elQ = document.getElementById("pv-qc");
+      if (elN) elN.textContent = m.name || "—";
+      if (elI) elI.textContent = m.imei || "—";
+      if (elS) elS.textContent = m.serial || "—";
+      if (elQ) elQ.textContent = m.qc_label || (m.has_qc ? "Ada QC" : "Belum QC beli");
+    }
+    // Soft warning: hanya jika QC beli ada yang bermasalah
+    if (warnBox) {
+      if (m.qc_bad > 0) {
+        warnBox.style.display = "block";
+        warnBox.innerHTML =
+          "<strong>Peringatan QC beli:</strong> unit ini punya <strong>" + m.qc_bad +
+          " item bermasalah</strong> saat dicek beli. Cek ulang / sampaikan ke pembeli. " +
+          "QC jual boleh dilewati (soft skip).";
+      } else {
+        warnBox.style.display = "none";
+        warnBox.innerHTML = "";
+      }
+    }
+  }
+
+  function totalCosts() {
+    var t = parseRp(charger && charger.value);
+    if (box) {
+      box.querySelectorAll('input[name="cost_amount"]').forEach(function (inp) {
+        t += parseRp(inp.value);
+      });
+    }
+    return t;
+  }
+
+  function refresh() {
+    var opt = sel && sel.options[sel.selectedIndex];
+    var buy = opt ? parseRp(opt.getAttribute("data-buy")) : 0;
+    var sj = parseRp(sell && sell.value);
+    var cost = totalCosts();
+    var profit = sj - buy - cost;
+    var elSell = document.getElementById("pv-sell");
+    var elBuy = document.getElementById("pv-buy");
+    var elCost = document.getElementById("pv-cost");
+    var elP = document.getElementById("pv-profit");
+    if (!elP) return;
+    elSell.textContent = sj ? fmt(sj) : "—";
+    elBuy.textContent = buy ? fmt(buy) : "—";
+    elCost.textContent = cost ? fmt(cost) : "Rp0";
+    elP.textContent = (sj || buy || cost) ? fmt(profit) : "—";
+    elP.className = "money " + (profit >= 0 ? "green" : "red");
+    elP.style.fontSize = "1.15rem";
+    elP.style.fontWeight = "700";
+  }
+
+  if (sel) {
+    sel.addEventListener("change", function () {
+      updateUnitPreview();
+      refresh();
+    });
+  }
+  if (sell) sell.addEventListener("input", refresh);
+  if (charger) charger.addEventListener("input", refresh);
+  if (box) {
+    box.addEventListener("input", function (e) {
+      if (e.target && e.target.name === "cost_amount") refresh();
+    });
+  }
+
+  var btn = document.getElementById("btn-add-cost");
+  if (btn && box) {
+    btn.addEventListener("click", function () {
+      var row = document.createElement("div");
+      row.className = "form-row two cost-row";
+      row.innerHTML =
+        '<div><label>Jenis biaya</label>' +
+        '<input name="cost_label" list="cost-presets" placeholder="Opsional" /></div>' +
+        '<div><label>Jumlah (Rp)</label>' +
+        '<input name="cost_amount" class="js-cost js-money" inputmode="numeric" placeholder="" /></div>';
+      box.appendChild(row);
+      refresh();
+    });
+  }
+
+  // QC radio → show note when bad
+  document.querySelectorAll(".qc-radio").forEach(function (r) {
+    r.addEventListener("change", function () {
+      var key = r.getAttribute("data-key");
+      var wrap = document.getElementById("note-wrap-" + key);
+      if (!wrap) return;
+      var checked = document.querySelector('input[name="qc_' + key + '"]:checked');
+      wrap.style.display = (checked && checked.value === "bad") ? "block" : "none";
+    });
+  });
+
+  var cannot = document.getElementById("cannot_check");
+  var qcFields = document.getElementById("qc-fields");
+  if (cannot && qcFields) {
+    cannot.addEventListener("change", function () {
+      qcFields.style.opacity = cannot.checked ? "0.45" : "1";
+      qcFields.style.pointerEvents = cannot.checked ? "none" : "auto";
+    });
+  }
+
+  var btnPhoto = document.getElementById("btn-add-photo");
+  var photoRows = document.getElementById("photo-rows");
+  if (btnPhoto && photoRows) {
+    btnPhoto.addEventListener("click", function () {
+      var d = document.createElement("div");
+      d.className = "form-row two photo-row";
+      d.innerHTML =
+        '<div><label>Keterangan</label><input name="qc_photo_label" placeholder="Part baterai" /></div>' +
+        '<div><label>Foto</label><input type="file" name="qc_photo" accept="image/*" /></div>';
+      photoRows.appendChild(d);
+    });
+  }
+
+  // Soft confirm saat submit jika QC beli bermasalah & QC jual kosong
+  var form = document.getElementById("form-jual");
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      var m = currentMeta();
+      if (!m || !(m.qc_bad > 0)) return;
+      var cannotSkip = document.getElementById("cannot_check");
+      var anyQc = false;
+      form.querySelectorAll(".qc-input, .qc-radio").forEach(function (el) {
+        if (el.type === "radio" && el.checked) anyQc = true;
+        if (el.type !== "radio" && el.value && String(el.value).trim()) anyQc = true;
+      });
+      if (cannotSkip && cannotSkip.checked) anyQc = true;
+      if (!anyQc) {
+        var ok = window.confirm(
+          "QC beli unit ini punya item bermasalah, dan QC jual masih kosong.\n\n" +
+          "Lanjut simpan penjualan tanpa QC jual? (boleh — ini hanya peringatan)"
+        );
+        if (!ok) e.preventDefault();
+      }
+    });
+  }
+
+  updateUnitPreview();
+  refresh();
+})();
+</script>
+{% endblock %}

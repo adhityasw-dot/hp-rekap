@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <div class="actions">
+    <span class="muted" style="align-self:center">{{ bulan_label }} {{ tahun_label }}</span>
+    <a class="btn btn-sm" href="/beli">+ Beli</a>
+    <a class="btn btn-sm btn-secondary" href="/jual">Jual</a>
+    <a class="btn btn-sm btn-secondary" href="/export/cashflow.xlsx" title="Stok + Penjualan + Kas + Operasional">
+      Export Excel
+    </a>
+    <a class="btn btn-sm btn-secondary" href="/katalog?k=leks-phone-katalog" target="_blank" rel="noopener"
+       title="Link stok untuk konsumen (tanpa data keuangan)">
+      Link katalog
+    </a>
+  </div>
+</div>
+
+<div class="grid cols-4 motion-grid">
+  <div class="card stat">
+    <h3>Kas di rekening (uang)</h3>
+    <div class="value money">{{ kas_rekening|idr }}</div>
+    <p class="muted" style="margin:0.35rem 0 0;font-size:0.75rem">
+      Modal {{ modal_setor|idr }} − stok {{ modal_barang|idr }}
+    </p>
+  </div>
+  <div class="card stat">
+    <h3>Modal di barang</h3>
+    <div class="value money amber">{{ modal_barang|idr }}</div>
+  </div>
+  <div class="card stat">
+    <h3>Laba {{ bulan_label }}</h3>
+    <div class="value money {% if laba_bulan >= 0 %}green{% else %}red{% endif %}">{{ laba_bulan|idr }}</div>
+  </div>
+  <div class="card stat">
+    <h3>Omzet {{ bulan_label }}</h3>
+    <div class="value money">{{ omzet_bulan|idr }}</div>
+    <p class="muted" style="margin:0.35rem 0 0;font-size:0.75rem">Hanya bulan berjalan</p>
+  </div>
+</div>
+
+<div class="grid cols-3 motion-grid" style="margin-top:0.75rem">
+  <div class="card">
+    <h3>Ready — HP</h3>
+    <div class="value">{{ ready_hp_count }} <span class="muted" style="font-size:0.9rem;font-weight:500">item</span></div>
+    <p class="muted" style="margin:0.35rem 0 0">Nilai modal {{ ready_hp_nilai|idr }}</p>
+  </div>
+  <div class="card">
+    <h3>Ready — Aksesoris</h3>
+    <div class="value">{{ ready_aks_count }} <span class="muted" style="font-size:0.9rem;font-weight:500">item</span></div>
+    <p class="muted" style="margin:0.35rem 0 0">
+      Qty {{ ready_aks_qty }} · modal {{ ready_aks_nilai|idr }}
+    </p>
+  </div>
+  <div class="card">
+    <h3>Ready — Lainnya</h3>
+    <div class="value">{{ ready_lain_count }} <span class="muted" style="font-size:0.9rem;font-weight:500">item</span></div>
+    <p class="muted" style="margin:0.35rem 0 0">
+      Laptop/tablet/dll · {{ ready_lain_nilai|idr }}
+    </p>
+  </div>
+</div>
+
+<div class="grid" style="margin-top:0.75rem">
+  <div class="card">
+    <h3>Operasional {{ bulan_label }}</h3>
+    <div class="value money red">{{ ops_bulan|idr }}</div>
+  </div>
+  <div class="card">
+    <h3>Total ready</h3>
+    <div class="value">{{ ready_count }} item</div>
+    <p class="muted" style="margin:0.35rem 0 0"><a href="/stok">Lihat stok →</a></p>
+  </div>
+</div>
+
+{% if bagi_hasil %}
+<div class="card" style="margin-top:0.75rem">
+  <h2>Bagi hasil {{ bulan_label }} {{ tahun_label }} (otomatis)</h2>
+  <div class="grid cols-3">
+    {% for name, pct, amt in bagi_hasil %}
+    <div class="card" style="box-shadow:none">
+      <h3>{{ name }} ({{ pct|int }}%)</h3>
+      <div class="value money green">{{ amt|idr }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted" style="margin:0.5rem 0 0">Dari laba unit {{ bulan_label }} saja. Atur porsi di <a href="/partner">Bagi hasil</a>.</p>
+</div>
+{% endif %}
+
+<div class="card card-full" style="margin-top:0.75rem">
+  <div class="page-header" style="margin-bottom:0.5rem">
+    <h2 style="margin:0">Stok ready (rincian)</h2>
+    <a class="muted" href="/stok?status=ready">Semua ready →</a>
+  </div>
+  <div class="grid cols-3">
+    <div>
+      <h3 style="margin-top:0">HP</h3>
+      {% if ready_hp_items %}
+      <ul style="margin:0;padding-left:1.1rem;font-size:0.9rem">
+        {% for it in ready_hp_items[:8] %}
+        <li><a href="/item/{{ it.id }}">{{ it.name }}</a> <span class="muted">{{ it.buy_price|idr }}</span></li>
+        {% endfor %}
+      </ul>
+      {% if ready_hp_items|length > 8 %}<p class="muted">+{{ ready_hp_items|length - 8 }} lagi</p>{% endif %}
+      {% else %}
+      <p class="muted">Tidak ada HP ready.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h3 style="margin-top:0">Aksesoris</h3>
+      {% if ready_aks_items %}
+      <ul style="margin:0;padding-left:1.1rem;font-size:0.9rem">
+        {% for it in ready_aks_items[:8] %}
+        <li>
+          <a href="/item/{{ it.id }}">{{ it.name }}</a>
+          <span class="muted">×{{ it.qty_remaining }} · {{ it.buy_price|idr }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Tidak ada aksesoris ready.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h3 style="margin-top:0">Lainnya</h3>
+      {% if ready_lain_items %}
+      <ul style="margin:0;padding-left:1.1rem;font-size:0.9rem">
+        {% for it in ready_lain_items[:8] %}
+        <li><a href="/item/{{ it.id }}">{{ it.name }}</a> <span class="muted">{{ it.buy_price|idr }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Tidak ada.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card card-full" style="margin-top:0.75rem">
+  <div class="page-header" style="margin-bottom:0.5rem">
+    <h2 style="margin:0">Stok mengendap (≥ {{ aging_threshold }} hari)</h2>
+    <a class="muted" href="/stok">Lihat semua →</a>
+  </div>
+  {% if aging %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Barang</th>
+          <th>Jenis</th>
+          <th>Hari</th>
+          <th>Modal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it, days in aging %}
+        <tr>
+          <td><a href="/item/{{ it.id }}">{{ it.name }}</a></td>
+          <td class="muted">{{ it.category }}</td>
+          <td><span class="badge badge-warn">{{ days }}h</span></td>
+          <td class="money">{{ it.buy_price|idr }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Tidak ada unit mengendap.</p>
+  {% endif %}
+</div>
+
+<div class="card card-full" style="margin-top:0.75rem">
+  <h2>Transaksi kas terakhir</h2>
+  <p class="muted" style="margin-top:-0.25rem">Detail buku kas. Angka atas = kas di rekening (modal − stok).</p>
+  {% if recent_cash %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Ket</th>
+          <th>Jumlah</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in recent_cash %}
+        <tr>
+          <td>{{ c.txn_date }}</td>
+          <td>{{ c.description or c.entry_type }}</td>
+          <td class="money {% if c.direction == 'in' %}green{% else %}red{% endif %}">
+            {% if c.direction == 'in' %}+{% else %}−{% endif %}{{ c.amount|idr }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Belum ada transaksi kas.</p>
+  {% endif %}
+</div>
+{% endblock %}

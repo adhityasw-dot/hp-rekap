@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>{% block title %}Leks Phone{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/money.js" defer></script>
+  <script src="/static/motion.js" defer></script>
+  <script src="/static/lightbox.js" defer></script>
+</head>
+<body class="{% if user %}app-shell{% else %}auth-shell{% endif %}">
+  {% if user %}
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/" title="Leks Phone — Dashboard">
+        <img src="/static/logo.png" alt="Leks Phone" class="brand-logo" />
+      </a>
+      <nav class="desktop-nav" aria-label="Menu utama">
+        <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+        <a href="/stok" class="{% if request.url.path.startswith('/stok') %}active{% endif %}">Stok</a>
+        <a href="/beli" class="{% if request.url.path.startswith('/beli') %}active{% endif %}">Beli</a>
+        <a href="/jual" class="{% if request.url.path.startswith('/jual') %}active{% endif %}">Jual</a>
+        <a href="/kas" class="{% if request.url.path.startswith('/kas') %}active{% endif %}">Kas</a>
+        <a href="/operasional" class="{% if request.url.path.startswith('/operasional') %}active{% endif %}">Operasional</a>
+        <a href="/laporan" class="{% if request.url.path.startswith('/laporan') %}active{% endif %}">Laporan</a>
+        <a href="/nota" class="{% if request.url.path == '/nota' or request.url.path.startswith('/nota?') %}active{% endif %}">Arsip nota</a>
+        <a href="/import" class="{% if request.url.path.startswith('/import') %}active{% endif %}">Import</a>
+        <a href="/partner" class="{% if request.url.path.startswith('/partner') %}active{% endif %}">Bagi hasil</a>
+        <a href="/logout">Keluar</a>
+      </nav>
+      <div class="user-chip">{{ user.display_name or user.username }}</div>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="container">
+    {% if flash_ok %}
+    <div class="alert alert-ok">{{ flash_ok }}</div>
+    {% endif %}
+    {% if flash_err %}
+    <div class="alert alert-err">{{ flash_err }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if user %}
+  <nav class="bottom-nav" aria-label="Navigasi bawah">
+    <a href="/" class="{% if request.url.path == '/' %}active{% endif %}"><span class="ico">⌂</span>Home</a>
+    <a href="/stok" class="{% if request.url.path.startswith('/stok') %}active{% endif %}"><span class="ico">▣</span>Stok</a>
+    <a href="/beli" class="{% if request.url.path.startswith('/beli') %}active{% endif %}"><span class="ico">＋</span>Beli</a>
+    <a href="/jual" class="{% if request.url.path.startswith('/jual') %}active{% endif %}"><span class="ico">⇄</span>Jual</a>
+    <a href="/kas" class="{% if request.url.path.startswith('/kas') %}active{% endif %}"><span class="ico">Rp</span>Kas</a>
+    <a href="/laporan" class="{% if request.url.path.startswith('/laporan') %}active{% endif %}"><span class="ico">☰</span>Lapor</a>
+  </nav>
+  {% endif %}
+</body>
+</html>

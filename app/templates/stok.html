@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Stok — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Stok</h1>
+  <a class="btn btn-sm" href="/beli">+ Beli</a>
+</div>
+
+<form class="filters" method="get" action="/stok">
+  <input type="search" name="q" value="{{ q }}" placeholder="Cari nama, IMEI, serial, supplier..." />
+  <select name="status">
+    <option value="ready" {% if status=='ready' %}selected{% endif %}>Ready / sisa</option>
+    <option value="sold" {% if status=='sold' %}selected{% endif %}>Sold</option>
+    <option value="all" {% if status=='all' %}selected{% endif %}>Semua</option>
+  </select>
+  <select name="category">
+    <option value="">Semua kategori</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if category==c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-sm" type="submit">Filter</button>
+</form>
+
+{% if items %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Barang</th>
+        <th>Status</th>
+        <th>QC</th>
+        <th>Modal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      {% set qm = qc_meta.get(it.id) %}
+      <tr>
+        <td>
+          <a href="/item/{{ it.id }}"><strong>{{ it.name }}</strong></a>
+          <div class="muted" style="font-size:0.8rem">
+            {{ it.purchase_date or '-' }} · {{ it.supplier or '-' }}
+            {% if it.kind == 'bulk' %} · qty {{ it.qty_remaining }}/{{ it.qty_total }}{% endif %}
+          </div>
+          {% if it.imei or it.serial_number %}
+          <div class="muted" style="font-size:0.75rem;margin-top:0.15rem">
+            {% if it.imei %}IMEI {{ it.imei }}{% endif %}
+            {% if it.imei and it.serial_number %} · {% endif %}
+            {% if it.serial_number %}SN {{ it.serial_number }}{% endif %}
+          </div>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-{{ it.status }}">{{ it.status }}</span>
+        </td>
+        <td>
+          {% if qm %}
+          <span class="badge badge-qc-{{ qm.badge }}">{{ qm.badge_label }}</span>
+          {% else %}
+          <span class="badge badge-qc-none">Belum QC</span>
+          {% endif %}
+        </td>
+        <td class="money">{{ it.buy_price|idr }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Tidak ada data. Import spreadsheet atau catat pembelian.</p>
+{% endif %}
+{% endblock %}

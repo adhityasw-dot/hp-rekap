@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Operasional — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Pengeluaran operasional</h1>
+</div>
+
+<div class="card" style="margin-bottom:0.75rem">
+  <form method="post" action="/operasional" class="form">
+    <div class="form-row two">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" name="expense_date" value="{{ today }}" required />
+      </div>
+      <div>
+        <label>Kategori</label>
+        <input name="category" list="ops-cats" placeholder="bensin, pulsa, sewa, makan..." />
+        <datalist id="ops-cats">
+          <option value="bensin" />
+          <option value="pulsa" />
+          <option value="makan" />
+          <option value="sewa" />
+          <option value="ongkir" />
+          <option value="lainnya" />
+        </datalist>
+      </div>
+    </div>
+    <div>
+      <label>Jumlah</label>
+      <input name="amount" class="js-money" inputmode="numeric" required placeholder="100,000" />
+    </div>
+    <div>
+      <label>Keterangan</label>
+      <input name="description" />
+    </div>
+    <p class="muted">Otomatis mengurangi kas.</p>
+    <button class="btn" type="submit">Simpan</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Riwayat</h2>
+  {% if expenses %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Tanggal</th><th>Kategori</th><th>Ket</th><th>Jumlah</th></tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td>{{ e.expense_date }}</td>
+          <td>{{ e.category }}</td>
+          <td>{{ e.description }}</td>
+          <td class="money red">{{ e.amount|idr }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Belum ada pengeluaran operasional.</p>
+  {% endif %}
+</div>
+{% endblock %}

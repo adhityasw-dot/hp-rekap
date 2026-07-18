@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% block title %}Beli Barang — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Beli Barang</h1>
+</div>
+
+<div class="alert alert-info">
+  Isi data beli + cek QC di halaman ini. Ringkasan di bawah menampilkan
+  <strong>berapa item belum dicek</strong> sebelum Anda tekan simpan.
+</div>
+
+<div class="card">
+  <form method="post" action="/beli" class="form" id="form-beli" enctype="multipart/form-data">
+    <h2 style="margin:0 0 0.5rem">Data pembelian</h2>
+    <div>
+      <label for="name">Nama barang *</label>
+      <input id="name" name="name" required placeholder="iPhone 13 Pro 128 Graphite" />
+    </div>
+    <div class="form-row two">
+      <div>
+        <label for="category">Kategori</label>
+        <select id="category" name="category">
+          <option value="hp">HP</option>
+          <option value="laptop">Laptop</option>
+          <option value="tablet">Tablet</option>
+          <option value="watch">Watch</option>
+          <option value="accessory">Aksesoris</option>
+          <option value="service">Service</option>
+          <option value="other">Lainnya</option>
+        </select>
+      </div>
+      <div>
+        <label for="kind">Jenis</label>
+        <select id="kind" name="kind">
+          <option value="unit">Unit (1 pcs)</option>
+          <option value="bulk">Bulk / multi qty</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row three">
+      <div>
+        <label for="purchase_date">Tanggal beli *</label>
+        <input id="purchase_date" name="purchase_date" type="date" value="{{ today }}" required />
+      </div>
+      <div>
+        <label for="buy_price">Harga beli (total) *</label>
+        <input id="buy_price" name="buy_price" class="js-money" inputmode="numeric" placeholder="6,300,000" required />
+      </div>
+      <div>
+        <label for="qty">Qty</label>
+        <input id="qty" name="qty" type="number" min="1" value="1" />
+      </div>
+    </div>
+    <div>
+      <label for="supplier">Tempat / supplier</label>
+      <input id="supplier" name="supplier" placeholder="Shopee, COD Kamal, ..." />
+    </div>
+    <div class="form-row two">
+      <div>
+        <label>Kontak supplier (nama)</label>
+        <input name="contact_name" placeholder="Opsional" />
+      </div>
+      <div>
+        <label>No. HP / WA</label>
+        <input name="contact_phone" placeholder="08..." />
+      </div>
+    </div>
+    <div>
+      <label for="notes">Catatan</label>
+      <textarea id="notes" name="notes" placeholder="Opsional"></textarea>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0" />
+
+    <h2 style="margin:0 0 0.35rem">Foto smartphone (bisa banyak)</h2>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">
+      Foto unit: depan, belakang, samping, dus, dll. Bisa pilih beberapa file sekaligus.
+    </p>
+    <div class="card" style="box-shadow:none;background:var(--surface2);margin-bottom:0.75rem">
+      <label for="unit_photo">Upload foto unit</label>
+      <input type="file" name="unit_photo" id="unit_photo" accept="image/*" multiple />
+      <p class="muted" style="font-size:0.75rem;margin:0.35rem 0 0">Maks. ~12 MB per file · jpg/png/webp</p>
+    </div>
+
+    <h2 style="margin:0 0 0.35rem">Hasil QC 3uTools (bisa banyak)</h2>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">
+      Screenshot hasil cek 3uTools (battery, parts, dll.). Bisa beberapa screenshot.
+    </p>
+    <div class="card" style="box-shadow:none;background:var(--surface2);margin-bottom:0.75rem">
+      <label for="threetools_photo">Upload screenshot 3uTools</label>
+      <input type="file" name="threetools_photo" id="threetools_photo" accept="image/*" multiple />
+      <p class="muted" style="font-size:0.75rem;margin:0.35rem 0 0">Simpan sebagai bukti QC bersama unit</p>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0" />
+
+    <h2 style="margin:0 0 0.35rem">Cek IMEI / Serial number (opsional)</h2>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">
+      ① Buka situs cek → ② Upload screenshot → ③ Field (termasuk IMEI &amp; serial number) terisi otomatis → koreksi → simpan.
+    </p>
+
+    <div class="actions" style="margin-bottom:0.65rem">
+      <a class="btn btn-sm" id="beli-link-iunlocker" href="https://iunlocker.com/" target="_blank" rel="noopener">Buka iUnlocker ↗</a>
+      <a class="btn btn-sm" id="beli-link-imeicheck" href="https://imeicheck.com/id/cek-imei" target="_blank" rel="noopener">Buka IMEICheck ↗</a>
+    </div>
+
+    <div class="card" style="box-shadow:none;background:var(--surface2);margin-bottom:0.75rem">
+      <label>Upload screenshot (bisa lebih dari 1 — iUnlocker + IMEICheck)</label>
+      <input type="file" name="screenshot" id="beli-screenshot" accept="image/*" multiple />
+      <p class="muted" style="font-size:0.75rem;margin:0.25rem 0">IMEI &amp; serial number ikut terisi otomatis jika terbaca dari gambar.</p>
+      <div class="actions" style="margin-top:0.5rem">
+        <button type="button" class="btn btn-sm" id="btn-ocr-beli">Baca semua screenshot &amp; isi form</button>
+      </div>
+      <p class="muted" id="ocr-status" style="margin:0.5rem 0 0;font-size:0.8rem"></p>
+      <pre id="ocr-preview" style="display:none;white-space:pre-wrap;font-size:0.7rem;color:var(--muted);max-height:100px;overflow:auto;margin:0.35rem 0 0"></pre>
+    </div>
+    <input type="hidden" name="device_info_json" id="device_info_json" value="" />
+
+    <div class="form-row two">
+      <div>
+        <label>IMEI</label>
+        <input name="imei" id="beli-imei" inputmode="numeric" placeholder="15 digit (otomatis / manual)" />
+      </div>
+      <div>
+        <label>IMEI2</label>
+        <input name="imei2" id="beli-imei2" inputmode="numeric" placeholder="Opsional" />
+      </div>
+    </div>
+    <div>
+      <label>Serial number</label>
+      <input name="serial_number" id="beli-serial" placeholder="Huruf kapital + angka, mis. C7CCDAJFN73D" />
+    </div>
+
+    <details open style="margin-bottom:0.75rem">
+      <summary style="cursor:pointer;color:var(--accent)">Hasil info perangkat (otomatis / koreksi manual)</summary>
+      <div class="form" style="margin-top:0.65rem">
+        <div class="form-row two">
+          <div><label>Model</label><input name="model" id="f-model" placeholder="IPHONE 11 BLACK 128GB" /></div>
+          <div><label>Model number</label><input name="model_number" id="f-model_number" placeholder="A2221" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Warna</label><input name="color" id="f-color" placeholder="Black" /></div>
+          <div><label>Storage</label><input name="storage" id="f-storage" placeholder="128GB" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>SIM Lock</label><input name="sim_lock" id="f-sim_lock" placeholder="Unlocked" /></div>
+          <div><label>Find My / iCloud</label><input name="fmi" id="f-fmi" placeholder="OFF / ON" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Garansi</label><input name="warranty" id="f-warranty" placeholder="Out Of Warranty" /></div>
+          <div><label>Apple Care</label><input name="apple_care" id="f-apple_care" placeholder="No" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Tgl beli (est.)</label><input name="purchase_date_est" id="f-purchase_date" placeholder="29 March 2020" /></div>
+          <div><label>Akhir garansi</label><input name="warranty_end" id="f-warranty_end" placeholder="18 August 2021" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Negara beli</label><input name="country" id="f-country" placeholder="JAPAN" /></div>
+          <div><label>Region</label><input name="region" id="f-region" placeholder="Global" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Demo</label><input name="demo" id="f-demo" placeholder="NO" /></div>
+          <div><label>Refurbished</label><input name="refurbished" id="f-refurbished" placeholder="NO" /></div>
+        </div>
+        <div class="form-row two">
+          <div><label>Replacement</label><input name="replacement" id="f-replacement" placeholder="NO" /></div>
+          <div><label>Aktivasi</label><input name="activated" id="f-activated" placeholder="Yes" /></div>
+        </div>
+        <div>
+          <label>SIM config</label>
+          <input name="sim_config" id="f-sim_config" placeholder="Nano-SIM + eSIM" />
+        </div>
+      </div>
+    </details>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0" />
+
+    <h2 style="margin:0 0 0.35rem">Quality Check sebelum simpan</h2>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">
+      Tandai: <strong>OK</strong> / <strong>Bermasalah</strong> (jika bermasalah, isi keterangan).
+      Ada % kondisi layar &amp; body. Yang belum dipilih = belum dicek.
+    </p>
+
+    <div class="card" id="qc-summary" style="box-shadow:none;background:var(--surface2);margin-bottom:0.75rem">
+      <div class="list-item" style="border:none;padding:0.25rem 0">
+        <span>Sudah dicek</span>
+        <strong id="qc-done">0</strong>
+      </div>
+      <div class="list-item" style="border:none;padding:0.25rem 0">
+        <span>Belum dicek</span>
+        <strong id="qc-pending" class="amber" style="color:var(--amber)">0</strong>
+      </div>
+      <div class="list-item" style="border:none;padding:0.25rem 0">
+        <span>Bermasalah</span>
+        <strong id="qc-bad" style="color:var(--red)">0</strong>
+      </div>
+      <p class="muted" id="qc-hint" style="margin:0.35rem 0 0;font-size:0.8rem"></p>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:0.5rem;color:var(--text)">
+      <input type="checkbox" name="cannot_check" id="cannot_check" value="1" style="width:auto" />
+      Unit tidak bisa dicek fungsional (skip checklist)
+    </label>
+    <div>
+      <label>Alasan jika tidak bisa dicek</label>
+      <input name="cannot_check_reason" id="cannot_check_reason" placeholder="Mati total / dll." />
+    </div>
+
+    <div id="qc-fields">
+      {% for group, rows in qc_groups.items() %}
+      <h3 style="margin:1rem 0 0.5rem;font-size:0.95rem;color:var(--accent)">{{ group }}</h3>
+      {% for row in rows %}
+        {% if row.type == 'percent' %}
+        <div class="list-item qc-row" data-qc-key="{{ row.key }}" data-qc-type="percent" style="align-items:center">
+          <span>{{ row.label }}</span>
+          <input class="qc-input" name="qc_{{ row.key }}" inputmode="numeric" placeholder="0-100" min="0" max="100" style="width:90px" />
+        </div>
+        {% else %}
+        <div class="qc-bool-block" style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">
+          <div class="list-item qc-row" data-qc-key="{{ row.key }}" data-qc-type="bool" style="flex-wrap:wrap;gap:0.5rem;border:none">
+            <span style="flex:1;min-width:140px">{{ row.label }}</span>
+            <label style="display:inline-flex;gap:0.25rem;align-items:center;color:var(--text);font-size:0.85rem">
+              <input type="radio" class="qc-input qc-radio" name="qc_{{ row.key }}" value="ok" data-key="{{ row.key }}" style="width:auto" /> OK
+            </label>
+            <label style="display:inline-flex;gap:0.25rem;align-items:center;color:var(--text);font-size:0.85rem">
+              <input type="radio" class="qc-input qc-radio" name="qc_{{ row.key }}" value="bad" data-key="{{ row.key }}" style="width:auto" /> Bermasalah
+            </label>
+          </div>
+          <div class="qc-note-wrap" id="note-wrap-{{ row.key }}" style="display:none;margin:0.25rem 0 0 0.5rem">
+            <label style="font-size:0.8rem">Jelaskan masalahnya</label>
+            <input name="qc_{{ row.key }}_note" placeholder="Contoh: body penyok kiri, baterai gantian..." />
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div>
+      <label>Catatan QC (umum)</label>
+      <textarea name="qc_notes" placeholder="Ringkasan tambahan..."></textarea>
+    </div>
+    <div class="card" style="box-shadow:none;background:var(--surface2);margin-top:0.5rem">
+      <h3 style="margin:0 0 0.5rem;font-size:0.95rem">Foto bukti masalah (opsional, bisa banyak)</h3>
+      <p class="muted" style="font-size:0.8rem;margin:0 0 0.5rem">Contoh: body penyok, part baterai gantian — lampirkan foto.</p>
+      <div id="photo-rows">
+        <div class="form-row two photo-row">
+          <div>
+            <label>Keterangan foto</label>
+            <input name="qc_photo_label" placeholder="Body penyok kiri" />
+          </div>
+          <div>
+            <label>File foto</label>
+            <input type="file" name="qc_photo" accept="image/*" />
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-secondary" id="btn-add-photo" style="margin-top:0.5rem">+ Tambah baris foto</button>
+    </div>
+
+    <p class="muted">Kas akan berkurang sesuai harga beli. QC disimpan bersama unit (fase: beli).</p>
+    <button class="btn btn-block" type="submit" id="btn-simpan-beli">Simpan pembelian + QC</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  function updateImeiLinks() {
+    var imei = (document.getElementById("beli-imei") || {}).value || "";
+    imei = imei.replace(/\D/g, "");
+    var a = document.getElementById("beli-link-iunlocker");
+    var b = document.getElementById("beli-link-imeicheck");
+    if (a) a.href = imei ? ("https://iunlocker.com/check_imei.php?imei=" + imei) : "https://iunlocker.com/";
+    if (b) b.href = imei ? ("https://imeicheck.com/id/cek-imei?imei=" + imei) : "https://imeicheck.com/id/cek-imei";
+  }
+  var im = document.getElementById("beli-imei");
+  if (im) im.addEventListener("input", updateImeiLinks);
+  updateImeiLinks();
+
+  // Map OCR fields → form inputs
+  var FIELD_MAP = {
+    imei: "beli-imei",
+    imei2: "beli-imei2",
+    serial: "beli-serial",
+    model: "f-model",
+    model_number: "f-model_number",
+    color: "f-color",
+    storage: "f-storage",
+    sim_lock: "f-sim_lock",
+    fmi: "f-fmi",
+    warranty: "f-warranty",
+    apple_care: "f-apple_care",
+    purchase_date: "f-purchase_date",
+    warranty_end: "f-warranty_end",
+    country: "f-country",
+    region: "f-region",
+    demo: "f-demo",
+    refurbished: "f-refurbished",
+    replacement: "f-replacement",
+    activated: "f-activated",
+    sim_config: "f-sim_config"
+  };
+
+  // build_manual_info di server pakai name purchase_date — samakan
+  var nameMap = { purchase_date: "purchase_date" };
+
+  function applyFields(fields) {
+    if (!fields) return;
+    Object.keys(FIELD_MAP).forEach(function (k) {
+      var el = document.getElementById(FIELD_MAP[k]);
+      if (el && fields[k] != null && fields[k] !== "") {
+        el.value = fields[k];
+      }
+    });
+    // purchase_date form field name for server
+    var pd = document.getElementById("f-purchase_date");
+    if (pd) {
+      pd.setAttribute("name", "purchase_date");
+    }
+    updateImeiLinks();
+  }
+
+  var btnOcr = document.getElementById("btn-ocr-beli");
+  if (btnOcr) {
+    btnOcr.addEventListener("click", function () {
+      var fileInput = document.getElementById("beli-screenshot");
+      var status = document.getElementById("ocr-status");
+      var preview = document.getElementById("ocr-preview");
+      var hidden = document.getElementById("device_info_json");
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        if (status) {
+          status.textContent = "Pilih file screenshot dulu.";
+          status.style.color = "var(--red)";
+        }
+        return;
+      }
+      if (status) {
+        status.textContent = "Membaca screenshot… tunggu sebentar.";
+        status.style.color = "var(--muted)";
+      }
+      btnOcr.disabled = true;
+      var fd = new FormData();
+      for (var i = 0; i < fileInput.files.length; i++) {
+        fd.append("screenshot", fileInput.files[i]);
+      }
+      fetch("/ocr/screenshot", { method: "POST", body: fd, credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          btnOcr.disabled = false;
+          if (status) {
+            status.textContent = data.message || (data.ok ? "OK" : "Gagal");
+            status.style.color = data.ok ? "var(--green)" : "var(--amber)";
+          }
+          if (data.fields) applyFields(data.fields);
+          if (data.device_info_json && hidden) hidden.value = data.device_info_json;
+          if (preview && data.ocr_preview) {
+            preview.style.display = "block";
+            preview.textContent = data.ocr_preview;
+          }
+        })
+        .catch(function (err) {
+          btnOcr.disabled = false;
+          if (status) {
+            status.textContent = "Gagal: " + err;
+            status.style.color = "var(--red)";
+          }
+        });
+    });
+  }
+
+  function toggleNotes() {
+    document.querySelectorAll(".qc-radio").forEach(function (r) {
+      if (!r.checked) return;
+      var key = r.getAttribute("data-key");
+      var wrap = document.getElementById("note-wrap-" + key);
+      if (wrap) wrap.style.display = r.value === "bad" ? "block" : "none";
+    });
+    // hide notes for keys not selected as bad
+    document.querySelectorAll(".qc-note-wrap").forEach(function (w) {
+      var key = w.id.replace("note-wrap-", "");
+      var bad = document.querySelector('input.qc-radio[data-key="' + key + '"][value="bad"]:checked');
+      w.style.display = bad ? "block" : "none";
+    });
+  }
+
+  function refreshQc() {
+    toggleNotes();
+    var skip = document.getElementById("cannot_check");
+    var skipOn = skip && skip.checked;
+    var rows = document.querySelectorAll(".qc-row");
+    var total = rows.length;
+    var done = 0, bad = 0, pending = 0;
+    rows.forEach(function (row) {
+      var type = row.getAttribute("data-qc-type");
+      var checked = false;
+      if (type === "percent") {
+        var inp = row.querySelector("input.qc-input");
+        checked = inp && String(inp.value || "").trim() !== "";
+      } else {
+        var sel = row.querySelector("input.qc-input:checked");
+        checked = !!sel;
+        if (sel && sel.value === "bad") bad += 1;
+      }
+      if (checked) done += 1; else pending += 1;
+    });
+    var elDone = document.getElementById("qc-done");
+    var elPend = document.getElementById("qc-pending");
+    var elBad = document.getElementById("qc-bad");
+    var hint = document.getElementById("qc-hint");
+    if (elDone) elDone.textContent = skipOn ? total + " (di-skip)" : String(done);
+    if (elPend) elPend.textContent = skipOn ? "0" : String(pending);
+    if (elBad) elBad.textContent = skipOn ? "0" : String(bad);
+    if (hint) {
+      if (skipOn) {
+        hint.textContent = "Checklist di-skip karena unit tidak bisa dicek fungsional.";
+        hint.style.color = "var(--amber)";
+      } else if (pending > 0) {
+        hint.textContent = "Masih ada " + pending + " poin belum dicek. Boleh simpan, tapi lebih baik dilengkapi dulu.";
+        hint.style.color = "var(--amber)";
+      } else if (bad > 0) {
+        hint.textContent = "Ada " + bad + " poin BERMASALAH — isi keterangan & foto bukti jika ada.";
+        hint.style.color = "var(--red)";
+      } else {
+        hint.textContent = "Semua poin sudah dicek. Siap disimpan.";
+        hint.style.color = "var(--green)";
+      }
+    }
+  }
+
+  document.getElementById("form-beli").addEventListener("change", refreshQc);
+  document.getElementById("form-beli").addEventListener("input", refreshQc);
+  var cc = document.getElementById("cannot_check");
+  if (cc) cc.addEventListener("change", refreshQc);
+
+  var btnPhoto = document.getElementById("btn-add-photo");
+  var photoRows = document.getElementById("photo-rows");
+  if (btnPhoto && photoRows) {
+    btnPhoto.addEventListener("click", function () {
+      var d = document.createElement("div");
+      d.className = "form-row two photo-row";
+      d.innerHTML =
+        '<div><label>Keterangan foto</label><input name="qc_photo_label" placeholder="Part baterai gantian" /></div>' +
+        '<div><label>File foto</label><input type="file" name="qc_photo" accept="image/*" /></div>';
+      photoRows.appendChild(d);
+    });
+  }
+  refreshQc();
+})();
+</script>
+{% endblock %}

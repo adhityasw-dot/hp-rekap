@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Import — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Import data</h1>
+</div>
+
+<div class="card" style="margin-bottom:0.75rem">
+  <h2>Kompres foto lama (sekali jalan)</h2>
+  <p class="muted" style="margin:0 0 0.75rem">
+    Foto yang sudah terupload sebelum fitur kompres masih ukuran besar.
+    Klik tombol di bawah untuk <strong>resize + thumbnail otomatis di server</strong>
+    — <strong>tidak perlu upload ulang</strong> dari HP.
+  </p>
+  <form method="post" action="/tools/optimize-photos"
+        onsubmit="return confirm('Kompres semua foto di server sekarang?\nBisa memakan beberapa detik jika fotonya banyak.');">
+    <button class="btn" type="submit">Kompres semua foto lama</button>
+  </form>
+</div>
+
+<div class="card" style="margin-bottom:0.75rem">
+  <h2>Import dari link Google Sheets (disarankan)</h2>
+  <p class="muted">
+    Tempel <strong>link spreadsheet</strong> di bawah. App akan menarik data online
+    (penjualan + stok) — <strong>tidak perlu unduh file</strong>.
+  </p>
+  <div class="alert alert-info">
+    Spreadsheet harus share: <strong>Anyone with the link → Viewer</strong>.
+    Import ini <strong>mengganti</strong> data item &amp; kas yang ada.
+  </div>
+  <form method="post" action="/import/google" class="form">
+    <div>
+      <label for="sheet_url">Link Google Spreadsheet</label>
+      <input
+        id="sheet_url"
+        name="sheet_url"
+        type="url"
+        placeholder="https://docs.google.com/spreadsheets/d/..../edit?usp=sharing"
+        value="https://docs.google.com/spreadsheets/d/18LzVzlXT0EUOjrE8hb23mANjCiBJSSGzXc-hXB2W4Cw/edit?usp=sharing"
+      />
+    </div>
+    <div>
+      <label>Modal awal (Rp)</label>
+      <input name="capital" class="js-money" inputmode="numeric" value="50,000,000" />
+    </div>
+    <button class="btn" type="submit">Import dari link (stok + penjualan)</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Import manual file CSV (opsional / cadangan)</h2>
+  <p class="muted">
+    Hanya jika link gagal. Di Google Sheets: <strong>File → Unduh → CSV</strong>, lalu upload di sini.
+  </p>
+  <form method="post" action="/import" enctype="multipart/form-data" class="form">
+    <div>
+      <label>Jenis file</label>
+      <select name="import_kind">
+        <option value="stock">Stok / rekap pembelian</option>
+        <option value="sales">Penjualan bulanan (ada Harga jual)</option>
+      </select>
+    </div>
+    <div>
+      <label>Label bulan (untuk penjualan)</label>
+      <input name="month_label" placeholder="Februari" value="Import" />
+    </div>
+    <div>
+      <label>File CSV</label>
+      <input type="file" name="file" accept=".csv,text/csv" required />
+    </div>
+    <div>
+      <label>Setor modal (hanya stok, opsional)</label>
+      <input name="capital" class="js-money" inputmode="numeric" placeholder="50,000,000" value="0" />
+    </div>
+    <button class="btn btn-secondary" type="submit">Upload CSV</button>
+  </form>
+</div>
+{% endblock %}

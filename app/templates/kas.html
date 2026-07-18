@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Kas — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Kas (1 kantong)</h1>
+</div>
+
+<div class="grid" style="margin-bottom:0.75rem">
+  <div class="card">
+    <h3>Kas di rekening (uang)</h3>
+    <div class="value money" style="font-size:1.35rem">{{ kas_rekening|idr }}</div>
+    <p class="muted" style="margin:0.35rem 0 0;font-size:0.8rem">
+      Modal {{ modal_setor|idr }} − stok {{ modal_barang|idr }}
+    </p>
+  </div>
+  <div class="card">
+    <h3>Saldo buku kas (cashflow)</h3>
+    <div class="value money" style="font-size:1.35rem">{{ saldo|idr }}</div>
+    <p class="muted" style="margin:0.35rem 0 0;font-size:0.8rem">
+      Semua masuk−keluar historis (bisa beda dari atas)
+    </p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:0.75rem">
+  <h2>Transaksi kas</h2>
+  <form method="post" action="/kas" class="form">
+    <div class="form-row two">
+      <div>
+        <label>Jenis</label>
+        <select name="entry_type" required>
+          <option value="capital">Setor modal (+)</option>
+          <option value="withdraw">Tarik pribadi (−)</option>
+          <option value="adjust_in">Penyesuaian masuk (+)</option>
+          <option value="adjust_out">Penyesuaian keluar (−)</option>
+        </select>
+      </div>
+      <div>
+        <label>Tanggal</label>
+        <input type="date" name="txn_date" value="{{ today }}" required />
+      </div>
+    </div>
+    <div>
+      <label>Jumlah</label>
+      <input name="amount" class="js-money" inputmode="numeric" required placeholder="1,000,000" />
+    </div>
+    <div>
+      <label>Keterangan</label>
+      <input name="description" placeholder="Setor modal awal, tarik, dll." />
+    </div>
+    <button class="btn" type="submit">Simpan</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Buku kas</h2>
+  {% if entries %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Tipe</th>
+          <th>Ket</th>
+          <th>Jumlah</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td>{{ e.txn_date }}</td>
+          <td>{{ e.entry_type }}</td>
+          <td>{{ e.description }}</td>
+          <td class="money {% if e.direction=='in' %}green{% else %}red{% endif %}">
+            {% if e.direction=='in' %}+{% else %}−{% endif %}{{ e.amount|idr }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Belum ada entri kas.</p>
+  {% endif %}
+</div>
+{% endblock %}

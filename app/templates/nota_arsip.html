@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Arsip Nota — Leks Phone{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Arsip nota jual</h1>
+</div>
+
+<p class="muted" style="margin:0 0 1rem">
+  Cari berdasarkan <strong>nama pembeli</strong>, <strong>No. WA</strong>, <strong>no. nota</strong>, atau nama unit.
+  Semua tersimpan di website (tidak dikirim ke HP konsumen).
+</p>
+
+<form class="filters" method="get" action="/nota">
+  <input type="search" name="q" value="{{ q }}" placeholder="Nama / WA / LP-00042 / iPhone..." />
+  <button class="btn btn-sm" type="submit">Cari</button>
+</form>
+
+{% if rows %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>No. nota</th>
+        <th>Tanggal</th>
+        <th>Pembeli</th>
+        <th>WA</th>
+        <th>Unit</th>
+        <th>Harga</th>
+        <th>TTD</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in rows %}
+      <tr>
+        <td><strong>{{ n.nota_no }}</strong></td>
+        <td>{{ n.sell_date or '—' }}</td>
+        <td>{{ n.buyer_name or '—' }}</td>
+        <td>{{ n.buyer_phone or '—' }}</td>
+        <td>{{ n.item_name }}</td>
+        <td class="money">{{ n.sell_price|idr }}</td>
+        <td>
+          {% if n.signature_path %}
+          <span class="badge badge-ready">Sudah</span>
+          {% else %}
+          <span class="badge badge-partial">Belum</span>
+          {% endif %}
+        </td>
+        <td><a class="btn btn-sm" href="/item/{{ n.item_id }}/nota">Buka nota</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Belum ada arsip nota{% if q %} untuk “{{ q }}”{% endif %}. Nota dibuat otomatis saat buka halaman nota setelah jual.</p>
+{% endif %}
+{% endblock %}

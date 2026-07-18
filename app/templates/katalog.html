@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Stok Ready — {{ shop.name }}</title>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/katalog.css" />
+  <script src="/static/lightbox.js" defer></script>
+</head>
+<body class="katalog-body">
+  <header class="katalog-top">
+    <img src="/static/logo.png" alt="{{ shop.name }}" class="katalog-logo-sm" />
+    <div>
+      <div class="katalog-brand">{{ shop.name }}</div>
+      <div class="katalog-sub">{{ shop.tagline }} · {{ shop.area }}</div>
+    </div>
+  </header>
+
+  <main class="katalog-main">
+    <div class="katalog-intro">
+      <h1>Stok ready</h1>
+      <p class="muted">Harga via chat · Kondisi &amp; foto unit · {{ items|length }} unit tersedia</p>
+    </div>
+
+    <div class="katalog-contacts katalog-contacts-row">
+      <a class="btn btn-sm" href="{{ shop.wa_link }}" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn btn-sm btn-secondary" href="{{ shop.ig_link }}" target="_blank" rel="noopener">Instagram</a>
+      <a class="btn btn-sm btn-secondary" href="{{ shop.tiktok_link }}" target="_blank" rel="noopener">TikTok</a>
+    </div>
+
+    <form class="katalog-search" method="get" action="/katalog">
+      <input type="hidden" name="k" value="{{ k }}" />
+      <input type="search" name="q" value="{{ q }}" placeholder="Cari iPhone 13, Macbook..." />
+      <button class="btn btn-sm" type="submit">Cari</button>
+    </form>
+
+    {% if items %}
+    <div class="katalog-grid">
+      {% for it in items %}
+      <a class="katalog-item" href="/katalog/{{ it.id }}?k={{ k|urlencode }}">
+        <div class="katalog-cover">
+          {% if it.cover %}
+          <img src="{{ it.cover }}" alt="{{ it.name }}" loading="lazy" decoding="async" />
+          {% else %}
+          <div class="katalog-cover-empty">Tanpa foto</div>
+          {% endif %}
+        </div>
+        <div class="katalog-item-body">
+          <div class="katalog-code">{{ it.code }}</div>
+          <div class="katalog-name">{{ it.name }}</div>
+          <div class="katalog-meta">
+            {% if it.battery %}<span>BH {{ it.battery }}%</span>{% endif %}
+            {% if it.photo_count %}<span>{{ it.photo_count }} foto</span>{% endif %}
+          </div>
+          <div class="katalog-qc">{{ it.qc.label }}</div>
+          <div class="katalog-price-hint">Chat untuk harga</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="katalog-empty">
+      <p>Belum ada stok ready{% if q %} untuk “{{ q }}”{% endif %}.</p>
+      <p class="muted">Hubungi kami via WhatsApp / Instagram / TikTok.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="katalog-foot">
+    <p>{{ shop.name }} · {{ shop.tagline }}</p>
+    <p class="muted" style="font-size:0.75rem">Link privat — jangan sebar ke publik tanpa persetujuan toko.</p>
+  </footer>
+</body>
+</html>

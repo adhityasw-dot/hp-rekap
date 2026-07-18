@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{% if item %}{{ item.name }}{% else %}Unit{% endif %} — {{ shop.name }}</title>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/katalog.css" />
+  <script src="/static/lightbox.js" defer></script>
+</head>
+<body class="katalog-body">
+  <header class="katalog-top">
+    <a href="/katalog?k={{ k|urlencode }}" class="katalog-back">← Stok</a>
+    <div class="katalog-brand">{{ shop.name }}</div>
+  </header>
+
+  <main class="katalog-main">
+    {% if err or not item %}
+    <div class="katalog-empty">
+      <p>{{ err or 'Unit tidak ditemukan.' }}</p>
+      <a class="btn" href="/katalog?k={{ k|urlencode }}">Kembali ke katalog</a>
+    </div>
+    {% else %}
+    <div class="katalog-detail">
+      <p class="katalog-code">{{ item.code }}</p>
+      <h1 class="katalog-detail-title">{{ item.name }}</h1>
+      <p class="katalog-price-hint" style="font-size:1rem;margin:0.35rem 0 1rem">Chat untuk harga</p>
+
+      <h2 class="katalog-section-title">Foto unit</h2>
+      {% if item.photos %}
+      <div class="photo-gallery katalog-gallery">
+        {% for p in item.photos %}
+        <a class="photo-thumb lightbox-trigger" href="{{ p.url }}" data-full="{{ p.url }}">
+          <img src="{{ p.thumb_url or p.url }}" alt="{{ p.label or item.name }}" loading="lazy" decoding="async" />
+          <span class="photo-cap">{{ loop.index }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="katalog-cover-empty" style="margin-bottom:1rem;max-height:120px;aspect-ratio:auto;padding:1.5rem">Belum ada foto unit</div>
+      {% endif %}
+
+      {% if item.threetools %}
+      <h2 class="katalog-section-title" style="margin-top:1.25rem">Hasil 3uTools</h2>
+      <div class="photo-gallery katalog-gallery">
+        {% for p in item.threetools %}
+        <a class="photo-thumb lightbox-trigger" href="{{ p.url }}" data-full="{{ p.url }}">
+          <img src="{{ p.thumb_url or p.url }}" alt="{{ p.label or '3uTools' }}" loading="lazy" decoding="async" />
+          <span class="photo-cap">3uTools {{ loop.index }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="katalog-card" style="margin-top:1rem">
+        <h2>Kondisi &amp; spek</h2>
+        <div class="list-item"><span class="muted">Kategori</span><span>{{ item.category }}</span></div>
+        <div class="list-item"><span class="muted">Battery health</span><span>{% if item.battery %}{{ item.battery }}%{% else %}—{% endif %}</span></div>
+        <div class="list-item"><span class="muted">QC ringkas</span><span>{{ item.qc.label }}</span></div>
+        {% if item.imei_mask %}
+        <div class="list-item"><span class="muted">IMEI (parsial)</span><span>{{ item.imei_mask }}</span></div>
+        {% endif %}
+        {% if item.device.get('color') %}
+        <div class="list-item"><span class="muted">Warna</span><span>{{ item.device.color }}</span></div>
+        {% endif %}
+        {% if item.device.get('storage') %}
+        <div class="list-item"><span class="muted">Storage</span><span>{{ item.device.storage }}</span></div>
+        {% endif %}
+        {% if item.device.get('model') %}
+        <div class="list-item"><span class="muted">Model</span><span>{{ item.device.model }}</span></div>
+        {% endif %}
+      </div>
+
+      {% if item.qc.has_qc and item.qc.groups %}
+      <div class="katalog-card" style="margin-top:0.75rem">
+        <h2>Quality Check Leks Phone</h2>
+        <p class="muted" style="font-size:0.85rem;margin:0 0 0.75rem">
+          {{ item.qc.ok }} OK · {{ item.qc.bad }} bermasalah
+        </p>
+        {% for group, rows in item.qc.groups.items() %}
+        <h3 style="font-size:0.85rem;color:var(--accent);margin:0.75rem 0 0.35rem">{{ group }}</h3>
+        {% for row in rows %}
+        <div class="list-item" style="align-items:flex-start">
+          <span class="muted" style="flex:1">{{ row.label }}</span>
+          <span style="text-align:right">
+            {% if row.type == 'percent' %}
+              <strong>{{ row.value }}%</strong>
+            {% elif row.value == 'ok' %}
+              <span class="badge badge-ready">OK</span>
+            {% elif row.value == 'bad' %}
+              <span class="badge badge-warn">Bermasalah</span>
+              {% if row.note %}<div class="muted" style="font-size:0.75rem;margin-top:0.2rem">{{ row.note }}</div>{% endif %}
+            {% else %}
+              {{ row.value }}
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+        {% endfor %}
+        {% if item.qc.notes %}
+        <p class="muted" style="margin-top:0.75rem;font-size:0.85rem"><strong>Catatan QC:</strong> {{ item.qc.notes }}</p>
+        {% endif %}
+      </div>
+      {% elif item.qc.cannot_check %}
+      <div class="katalog-card" style="margin-top:0.75rem">
+        <h2>Quality Check</h2>
+        <p class="muted">{{ item.qc.label }}{% if item.qc.reason %}: {{ item.qc.reason }}{% endif %}</p>
+      </div>
+      {% endif %}
+
+      <div class="katalog-cta">
+        <a class="btn btn-block" href="{{ item.wa_link }}" target="_blank" rel="noopener">Tanya harga via WhatsApp</a>
+        <div class="katalog-contacts katalog-contacts-row" style="margin-top:0.65rem">
+          <a class="btn btn-sm btn-secondary" href="{{ shop.ig_link }}" target="_blank" rel="noopener">Instagram</a>
+          <a class="btn btn-sm btn-secondary" href="{{ shop.tiktok_link }}" target="_blank" rel="noopener">TikTok</a>
+        </div>
+        <p class="muted" style="text-align:center;font-size:0.8rem;margin-top:0.75rem">
+          {{ shop.area }} · Garansi toko sesuai ketentuan
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

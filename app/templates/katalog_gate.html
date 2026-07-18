@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Katalog — {{ shop.name }}</title>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/katalog.css" />
+</head>
+<body class="katalog-body">
+  <div class="katalog-wrap">
+    <div class="katalog-card katalog-gate">
+      <img src="/static/logo.png" alt="{{ shop.name }}" class="katalog-logo" />
+      <h1>{{ shop.name }}</h1>
+      <p class="katalog-tag">{{ shop.tagline }}</p>
+      {% if err %}
+      <div class="alert alert-err">Link katalog tidak valid. Minta link terbaru ke admin toko.</div>
+      {% else %}
+      <p class="muted" style="text-align:center">
+        Buka lewat <strong>link khusus</strong> dari Leks Phone untuk melihat stok ready.
+      </p>
+      {% endif %}
+      <div class="katalog-contacts">
+        <a class="btn btn-block" href="{{ shop.wa_link }}" target="_blank" rel="noopener">Chat WhatsApp</a>
+        <a class="btn btn-secondary btn-block" href="{{ shop.ig_link }}" target="_blank" rel="noopener">Instagram {{ shop.ig }}</a>
+        <a class="btn btn-secondary btn-block" href="{{ shop.tiktok_link }}" target="_blank" rel="noopener">TikTok {{ shop.tiktok }}</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

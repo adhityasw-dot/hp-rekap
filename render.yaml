@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: hp-rekap
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true
+    disk:
+      name: hp-rekap-data
+      mountPath: /data
+      sizeGB: 1
