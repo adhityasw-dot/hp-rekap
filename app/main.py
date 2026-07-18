@@ -1280,21 +1280,13 @@ def _void_sale(db: Session, item: Item) -> str:
     for qc in jual_qcs:
         db.delete(qc)
 
-    # Arsip nota: tandai void (aman jika tabel belum ada / error)
+    # Arsip nota: tandai void (jangan rollback stok jika ini gagal)
     try:
-        for n in (
-            db.query(SaleNota)
-            .filter(SaleNota.item_id == item.id)
-            .all()
-        ):
+        for n in db.query(SaleNota).filter(SaleNota.item_id == item.id).all():
             n.voided = True
     except Exception:
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        # pastikan item masih ter-attach; caller akan commit void stok
-        db.add(item)
+        # tabel belum siap / error lain — abaikan, stok tetap dikembalikan
+        pass
 
     item.qty_remaining = item.qty_total
     item.sell_price = None
